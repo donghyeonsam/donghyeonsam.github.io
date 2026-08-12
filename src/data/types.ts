@@ -24,4 +24,6 @@ export interface ClassifiedItem {
   id: string
   title: string
   date: string
+  /** Link to the source Notion page, when this item was synced from Notion. */
+  notionUrl?: string
 }

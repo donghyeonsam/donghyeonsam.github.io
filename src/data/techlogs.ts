@@ -1,7 +1,10 @@
 import type { ClassifiedItem } from './types'
 
-// Tech Logs list — newest first. Add a new entry here to publish a new log;
-// ClassifiedList renders it automatically.
+// Synced from a Notion database by scripts/sync-notion.mjs (npm run
+// sync:notion, or automatically before `npm run build` when NOTION_TOKEN +
+// NOTION_TECHLOGS_DATABASE_ID are set). This committed copy is the fallback
+// used whenever those aren't set, so edits here are safe until the next
+// sync overwrites them.
 export const techlogsList: ClassifiedItem[] = [
   { id: '1', title: 'TechLogs 1', date: '08.06' },
   { id: '2', title: 'TechLogs 2', date: '08.03' },

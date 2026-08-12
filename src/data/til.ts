@@ -1,7 +1,10 @@
 import type { ClassifiedItem } from './types'
 
-// TIL list — newest first. Add a new entry here to publish a new TIL;
-// ClassifiedList renders it automatically.
+// Synced from a Notion database by scripts/sync-notion.mjs (npm run
+// sync:notion, or automatically before `npm run build` when NOTION_TOKEN +
+// NOTION_TIL_DATABASE_ID are set). This committed copy is the fallback used
+// whenever those aren't set, so edits here are safe until the next sync
+// overwrites them.
 export const tilList: ClassifiedItem[] = [
   { id: '1', title: 'TIL 1', date: '08.10' },
   { id: '2', title: 'TIL 2', date: '08.09' },

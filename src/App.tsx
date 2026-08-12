@@ -1,15 +1,19 @@
 import { Routes, Route, useParams } from 'react-router-dom'
 import MagazinePage from './pages/MagazinePage'
 import PlaceholderPage from './pages/PlaceholderPage'
+import { tilList } from './data/til'
+import { techlogsList } from './data/techlogs'
 
 function TilDetail() {
   const { id } = useParams()
-  return <PlaceholderPage heading={`TIL #${id} (준비 중)`} />
+  const item = tilList.find((it) => it.id === id)
+  return <PlaceholderPage heading={`TIL: ${item?.title ?? id} (준비 중)`} notionUrl={item?.notionUrl} />
 }
 
 function TechLogDetail() {
   const { id } = useParams()
-  return <PlaceholderPage heading={`Tech Log #${id} (준비 중)`} />
+  const item = techlogsList.find((it) => it.id === id)
+  return <PlaceholderPage heading={`Tech Log: ${item?.title ?? id} (준비 중)`} notionUrl={item?.notionUrl} />
 }
 
 function App() {
