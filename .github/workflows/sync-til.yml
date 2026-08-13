@@ -1,0 +1,90 @@
+name: Sync Notion TIL
+
+on:
+  schedule:
+    - cron: '0 15 * * *'  # 매일 자정 KST (UTC 15:00)
+  workflow_dispatch:       # 수동 실행 가능
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # 1. Notion에서 새 TIL 가져오기
+      - name: Sync TIL content from Notion
+        run: node scripts/sync-til-content.mjs
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_TIL_DATABASE_ID: ${{ secrets.NOTION_TIL_DATABASE_ID }}
+
+      # 2. 새 TIL이 있으면 날짜별로 커밋
+      - name: Commit new TILs with backdated dates
+        run: |
+          if [ ! -f .new-til-entries.json ]; then
+            echo "새 TIL 없음"
+            exit 0
+          fi
+
+          git config user.name "donghyeonsam"
+          git config user.email "vvddalfmr@gmail.com"
+
+          # .new-til-entries.json을 파싱해서 날짜별 커밋 생성
+          python3 << 'PYEOF'
+          import json, subprocess, os
+
+          with open('.new-til-entries.json') as f:
+              entries = json.load(f)
+
+          for entry in sorted(entries, key=lambda x: x['date']):
+              date = entry['date']
+              filename = entry['filename']
+              title = entry['title']
+              git_date = f"{date}T12:00:00+09:00"
+              mmdd = filename.split('_')[0]
+              display = f"{mmdd[:2]}.{mmdd[2:4]}"
+
+              subprocess.run(['git', 'add', f'til/{filename}/'], check=True)
+              env = os.environ.copy()
+              env['GIT_AUTHOR_DATE'] = git_date
+              env['GIT_COMMITTER_DATE'] = git_date
+              subprocess.run(
+                  ['git', 'commit', '-m', f'TIL: {title} ({display})'],
+                  env=env, check=True
+              )
+              print(f'Committed: {filename} ({date})')
+          PYEOF
+
+          # 임시 파일 제거
+          rm -f .new-til-entries.json
+          git add -A
+          git diff --cached --quiet || git commit -m "chore: clean up sync artifacts"
+
+      # 3. Push
+      - name: Push changes
+        run: git push origin master
+
+      # 4. til.ts도 업데이트 (기존 sync-notion.mjs 실행)
+      - name: Update til.ts metadata
+        run: node scripts/sync-notion.mjs
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_TIL_DATABASE_ID: ${{ secrets.NOTION_TIL_DATABASE_ID }}
+
+      - name: Commit til.ts update
+        run: |
+          git add src/data/til.ts
+          git diff --cached --quiet || git commit -m "chore: update til.ts metadata"
+          git push origin master
