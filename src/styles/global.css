@@ -179,8 +179,12 @@ nav.section-nav a:focus-visible{outline:1px solid var(--ink);outline-offset:2px;
   text-align:center;font-family:'Special Elite', monospace;font-size:9.5px;
   color:var(--ink-soft);padding:8px 14px 0;text-transform:uppercase;letter-spacing:.05em;
 }
-.classified-list{list-style:none;margin:0;padding:12px 16px 16px;}
+/* position:relative so each row's offsetTop (used by the pointer-proximity
+   effect in ClassifiedRows) is measured from this element, matching the
+   coordinate frame its own getBoundingClientRect() uses. */
+.classified-list{list-style:none;margin:0;padding:12px 16px 16px;position:relative;}
 .classified-list li{
+  --effect:0;
   display:flex;align-items:center;gap:10px;
   padding:8px 0;border-bottom:1px dotted var(--ink-soft);
   font-size:12.5px;
@@ -188,15 +192,28 @@ nav.section-nav a:focus-visible{outline:1px solid var(--ink);outline-offset:2px;
 .classified-list li:first-child{border-top:1px dotted var(--ink-soft);}
 .classified-list__bar{
   flex:none;width:3px;align-self:stretch;
-  background:var(--ink-soft);border-radius:1px;transform-origin:top;
+  background:var(--ink-soft);border-radius:1px;
+  transform:scaleY(calc(0.55 + var(--effect,0) * 0.45));
+  /* Fallback for browsers without color-mix(): base value below is
+     overwritten by the (higher-specificity) hover/focus rule instead. */
+  background:color-mix(in srgb, var(--ink) calc(var(--effect,0) * 100%), var(--ink-soft));
 }
 .classified-list li:hover .classified-list__bar,
 .classified-list li:focus-within .classified-list__bar{background:var(--ink);}
 .classified-list a{display:flex;justify-content:space-between;align-items:baseline;width:100%;flex:1;min-width:0;}
 .classified-list a:hover, .classified-list a:focus-visible{text-decoration:underline;}
 .classified-list a:focus-visible{outline:1px solid var(--ink);outline-offset:2px;}
-.classified-list .idx{font-family:'Special Elite', monospace;font-size:10px;color:var(--ink-soft);flex:none;}
-.classified-list__title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px;}
+.classified-list .idx{
+  font-family:'Special Elite', monospace;font-size:10px;color:var(--ink-soft);flex:none;
+  opacity:calc(0.6 + var(--effect,0) * 0.4);
+}
+.classified-list__title{
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px;
+  transform:translateX(calc(var(--effect,0) * 10px));
+  color:color-mix(in srgb, var(--ink) calc(var(--effect,0) * 100%), var(--ink-soft));
+}
+.classified-list li:hover .classified-list__title,
+.classified-list li:focus-within .classified-list__title{color:var(--ink);}
 .classified-list .dt{font-family:'Special Elite', monospace;font-size:10px;color:var(--ink-soft);flex:none;}
 .see-all-row{
   text-align:center;padding:0 0 14px;
@@ -263,10 +280,35 @@ footer{
   background:rgba(10,10,8,.06);padding:.1em .35em;border-radius:2px;
 }
 .md-article pre{
+  --code-keyword:#8a3324;
+  --code-string:#4b6b3f;
+  --code-number:#a3701d;
+  --code-comment:#83796a;
+  --code-title:#5c3a5c;
+  --code-tag:#6e2142;
+  --code-builtin:#3d6b6b;
   background:rgba(10,10,8,.06);border:1px solid var(--ink-soft);
   padding:12px 14px;overflow-x:auto;margin:0 0 16px;
 }
-.md-article pre code{background:none;padding:0;}
+.md-article pre code{background:none;padding:0;font-family:'Special Elite', monospace;font-size:.85em;line-height:1.6;}
+.md-article .hljs-comment, .md-article .hljs-quote{color:var(--code-comment);font-style:italic;}
+.md-article .hljs-keyword, .md-article .hljs-selector-tag, .md-article .hljs-literal, .md-article .hljs-doctag{
+  color:var(--code-keyword);font-weight:700;
+}
+.md-article .hljs-string, .md-article .hljs-regexp, .md-article .hljs-addition{color:var(--code-string);}
+.md-article .hljs-number, .md-article .hljs-symbol, .md-article .hljs-bullet{color:var(--code-number);}
+.md-article .hljs-title, .md-article .hljs-section{color:var(--code-title);font-weight:700;}
+.md-article .hljs-attr, .md-article .hljs-attribute, .md-article .hljs-variable,
+.md-article .hljs-template-variable, .md-article .hljs-type,
+.md-article .hljs-selector-class, .md-article .hljs-selector-attr, .md-article .hljs-selector-pseudo{
+  color:var(--code-tag);
+}
+.md-article .hljs-name, .md-article .hljs-tag{color:var(--code-tag);font-weight:600;}
+.md-article .hljs-built_in, .md-article .hljs-builtin-name{color:var(--code-builtin);}
+.md-article .hljs-deletion{color:var(--code-keyword);background:rgba(138,51,36,.08);}
+.md-article .hljs-emphasis{font-style:italic;}
+.md-article .hljs-strong{font-weight:700;}
+.md-article .hljs-link{text-decoration:underline;}
 .md-article a{border-bottom:1px solid var(--ink);}
 .md-article a:hover, .md-article a:focus-visible{opacity:.7;}
 .md-article hr{border:none;border-top:1px dashed var(--ink-soft);margin:22px 0;}

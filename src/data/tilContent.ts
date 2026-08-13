@@ -8,7 +8,33 @@
 // lines them up 1:1. Verified against every multi-entry day (0206/_1/_2,
 // 0428/_1, 0610/_1) by matching titles before relying on it here.
 import { marked } from 'marked'
+import hljs from 'highlight.js/lib/core'
+import python from 'highlight.js/lib/languages/python'
+import sql from 'highlight.js/lib/languages/sql'
+import xml from 'highlight.js/lib/languages/xml'
+import javascript from 'highlight.js/lib/languages/javascript'
 import { tilList } from './til'
+
+hljs.registerLanguage('python', python)
+hljs.registerLanguage('sql', sql)
+hljs.registerLanguage('html', xml)
+hljs.registerLanguage('xml', xml)
+hljs.registerLanguage('javascript', javascript)
+hljs.registerLanguage('jsx', javascript)
+
+// Fenced code blocks (```python etc.) render through highlight.js instead of
+// marked's default (which just escapes the text — every token comes out the
+// same flat ink color). CSS for the resulting .hljs-* spans lives in
+// global.css under .md-article pre.
+marked.use({
+  renderer: {
+    code({ text, lang }) {
+      const language = lang && hljs.getLanguage(lang) ? lang : undefined
+      const { value } = language ? hljs.highlight(text, { language }) : hljs.highlightAuto(text)
+      return `<pre><code class="hljs${language ? ` language-${language}` : ''}">${value}</code></pre>`
+    },
+  },
+})
 
 export interface TilArticle {
   html: string
