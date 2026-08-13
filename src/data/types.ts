@@ -26,4 +26,6 @@ export interface ClassifiedItem {
   date: string
   /** Link to the source Notion page, when this item was synced from Notion. */
   notionUrl?: string
+  /** til/<folder> name holding this entry's markdown + images, when synced locally. */
+  folder?: string
 }

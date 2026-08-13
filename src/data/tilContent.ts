@@ -1,12 +1,7 @@
-// Resolves a TIL list entry (src/data/til.ts, hand-maintained) to its source
-// markdown note under /til/<folder>/<folder>.md and renders it to HTML.
-//
-// til.ts has no explicit link to its source folder, so the mapping is
-// derived positionally: til.ts is newest-first, the til/ folders sort
-// oldest-first by name (MMDD, with `_1`/`_2` suffixes disambiguating same-day
-// entries) — reversing til.ts and zipping it against the sorted folder list
-// lines them up 1:1. Verified against every multi-entry day (0206/_1/_2,
-// 0428/_1, 0610/_1) by matching titles before relying on it here.
+// Resolves a TIL list entry (src/data/til.ts, built by scripts/build-til.mjs)
+// to its source markdown note under /til/<folder>/<folder>.md and renders it
+// to HTML. Each til.ts entry carries its own `folder`, so the lookup is a
+// direct map instead of guessing from list/folder ordering.
 import { marked } from 'marked'
 import hljs from 'highlight.js/lib/core'
 import python from 'highlight.js/lib/languages/python'
@@ -50,14 +45,12 @@ function folderOf(path: string) {
   return path.split('/')[2] ?? ''
 }
 
-const sortedFolders = Object.keys(mdModules).sort((a, b) => folderOf(a).localeCompare(folderOf(b)))
-const oldestFirstTil = [...tilList].reverse()
-
 const idToMdPath = new Map<string, string>()
-oldestFirstTil.forEach((item, index) => {
-  const path = sortedFolders[index]
-  if (path) idToMdPath.set(item.id, path)
-})
+for (const item of tilList) {
+  if (!item.folder) continue
+  const mdPath = `/til/${item.folder}/${item.folder}.md`
+  if (mdModules[mdPath]) idToMdPath.set(item.id, mdPath)
+}
 
 export function hasTilArticle(id: string): boolean {
   return idToMdPath.has(id)

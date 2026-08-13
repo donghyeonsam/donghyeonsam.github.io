@@ -10,9 +10,15 @@
 // ever falling back to a bare date.
 const MAX_LEN = 60
 
+// A title that's just a Notion "@2026년 5월 29일"-style date mention isn't a
+// real topic — it's what's left in the title property when the user never
+// typed one in. Treat it the same as blank so callers fall through to the
+// summary/date fallback instead of surfacing the raw mention text.
+const BARE_DATE_MENTION = /^@?\d{4}년\s*\d{1,2}월\s*\d{1,2}일$/
+
 export function deriveTitle({ titleText, summaryText, fallbackDateLabel }) {
   const title = (titleText || '').trim()
-  if (title) return title
+  if (title && !BARE_DATE_MENTION.test(title)) return title
 
   const firstLine = (summaryText || '')
     .split('\n')

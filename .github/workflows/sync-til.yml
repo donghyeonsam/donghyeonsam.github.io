@@ -76,12 +76,9 @@ jobs:
       - name: Push changes
         run: git push origin master
 
-      # 4. til.ts도 업데이트 (기존 sync-notion.mjs 실행)
-      - name: Update til.ts metadata
-        run: node scripts/sync-notion.mjs
-        env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          NOTION_TIL_DATABASE_ID: ${{ secrets.NOTION_TIL_DATABASE_ID }}
+      # 4. til.ts 재생성 (til/*.md에서 직접 빌드 — Notion title 속성에 의존하지 않음)
+      - name: Rebuild til.ts from synced markdown
+        run: node scripts/build-til.mjs
 
       - name: Commit til.ts update
         run: |

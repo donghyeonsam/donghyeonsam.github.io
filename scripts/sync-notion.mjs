@@ -1,7 +1,11 @@
-// Pulls TIL and Tech Logs from their own Notion databases into
-// src/data/til.ts / src/data/techlogs.ts. Runs automatically before
-// `npm run build` (see package.json's "prebuild"); also runnable directly
-// via `npm run sync:notion`.
+// Pulls Tech Logs from its Notion database into src/data/techlogs.ts. Runs
+// automatically before `npm run build` (see package.json's "prebuild");
+// also runnable directly via `npm run sync:notion`.
+//
+// TIL used to be synced here too, straight from the Notion database's title
+// property. That's now handled by scripts/build-til.mjs instead, which
+// builds src/data/til.ts from the already-synced til/*/*.md notes on disk —
+// see that script's header comment for why.
 //
 // Needs NOTION_TOKEN plus one database id per source — see .env.example.
 // Missing credentials aren't an error: the script just leaves the existing
@@ -17,7 +21,6 @@ import { deriveTitle } from './til-title.mjs'
 const dataDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'data')
 
 const SOURCES = [
-  { key: 'til', envVar: 'NOTION_TIL_DATABASE_ID', outFile: 'til.ts', exportName: 'tilList' },
   { key: 'techlogs', envVar: 'NOTION_TECHLOGS_DATABASE_ID', outFile: 'techlogs.ts', exportName: 'techlogsList' },
 ]
 
