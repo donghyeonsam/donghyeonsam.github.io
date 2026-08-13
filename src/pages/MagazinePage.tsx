@@ -46,7 +46,7 @@ function MagazinePage() {
           />
           <ClassifiedList
             id="techlogs"
-            title="TECH LOGS List"
+            title="TECH LOGs"
             desc="더 깊이 파고든 것들의 기록"
             items={techlogsList}
             basePath="techlogs"
