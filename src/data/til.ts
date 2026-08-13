@@ -30,7 +30,7 @@ export const tilList: ClassifiedItem[] = [
   { id: '27', title: 'SQL 02 (DDL, JOIN ,, )', date: '04.28' },
   { id: '28', title: 'SQL 01 (about DB, DML ,,)', date: '04.27' },
   { id: '29', title: 'B형 특강 2차시 (그래프, 트리)', date: '04.25' },
-  { id: '30', title: '(no summary)', date: '04.24' },
+  { id: '30', title: 'Django (AbstractUser)', date: '04.24' },
   { id: '31', title: 'Django (Authentication 03)', date: '04.23' },
   { id: '32', title: 'Django (Authentication 02)', date: '04.22' },
   { id: '33', title: 'Django (Authentication 01)', date: '04.21' },
