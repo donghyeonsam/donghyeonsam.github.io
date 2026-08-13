@@ -50,10 +50,15 @@ function TilDetailPage() {
 
         {status === 'loading' && <p className="article-status">불러오는 중…</p>}
         {status === 'missing' && <p className="article-status">이 글의 원문을 찾을 수 없습니다.</p>}
-        {status === 'ready' && article && (
-          <div className="md-article" dangerouslySetInnerHTML={{ __html: article.html }} />
-        )}
       </div>
+
+      {/* Left out of .vintage-tone on purpose: filter rasterizes its whole
+          subtree, and TIL screenshots need to keep their real colors instead
+          of being washed out along with the vintage paper look. */}
+      {status === 'ready' && article && (
+        <div className="md-article" dangerouslySetInnerHTML={{ __html: article.html }} />
+      )}
+
       <MagazineFooter text="Published Daily by Dongsam · Printed via GitHub Pages · All Rights Reserved" />
     </div>
   )
