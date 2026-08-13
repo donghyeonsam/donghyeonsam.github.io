@@ -17,12 +17,13 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import https from 'node:https'
 import http from 'node:http'
+import { deriveTitle } from './til-title.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.join(__dirname, '..')
 const TIL_DIR = path.join(ROOT, 'til')
 
-const EXCLUDE_DATES = new Set(['2026-01-20', '2026-03-23', '2026-03-24', '2026-05-22'])
+const EXCLUDE_DATES = new Set(['2026-01-20', '2026-03-23', '2026-03-24', '2026-05-22', '2026-01-21', '2026-01-23', '2026-01-30', '2026-02-15', '2026-02-17', '2026-02-18', '2026-03-02', '2026-03-06', '2026-03-13', '2026-03-14', '2026-03-21', '2026-03-22', '2026-04-02', '2026-04-03', '2026-04-08', '2026-04-18', '2026-04-20', '2026-04-25', '2026-05-05', '2026-05-29', '2026-06-05'])
 
 const token = process.env.NOTION_TOKEN
 const databaseId = process.env.NOTION_TIL_DATABASE_ID
@@ -351,7 +352,9 @@ async function main() {
     const notionPageId = extractNotionPageId(yourLinks)
 
     const titleProp = getPropertyValue(props, 'title')
-    const title = titleProp?.title?.map(t => t.plain_text).join('').trim() || filename
+    const titleText = titleProp?.title?.map(t => t.plain_text).join('').trim() ?? ''
+    const dateLabel = `${mmdd.slice(0, 2)}.${mmdd.slice(2, 4)}`
+    const title = deriveTitle({ titleText, summaryText: tilSummary, fallbackDateLabel: dateLabel })
 
     newEntries.push({ date, filename, title, tilSummary, notionPageId, yourLinks })
     existing.add(filename)

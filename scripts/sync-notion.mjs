@@ -12,6 +12,7 @@ import { Client } from '@notionhq/client'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { deriveTitle } from './til-title.mjs'
 
 const dataDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'data')
 
@@ -30,6 +31,16 @@ const notion = new Client({ auth: token })
 
 function findProperty(properties, type) {
   return Object.values(properties).find((p) => p.type === type)
+}
+
+// Prefer a rich_text property that looks like a daily summary/TIL field
+// (by key name); fall back to the first non-empty rich_text property of any
+// name, since database column naming isn't guaranteed across sources.
+function findSummaryText(properties) {
+  const richTextEntries = Object.entries(properties).filter(([, p]) => p.type === 'rich_text')
+  const preferred = richTextEntries.find(([key]) => /til|summary|요약/i.test(key))
+  const [, prop] = preferred ?? richTextEntries.find(([, p]) => p.rich_text?.length) ?? []
+  return prop?.rich_text?.map((t) => t.plain_text).join('') ?? ''
 }
 
 function formatDate(iso) {
@@ -62,12 +73,17 @@ async function fetchAllPages(databaseId) {
 function mapPage(page) {
   const titleProp = findProperty(page.properties, 'title')
   const dateProp = findProperty(page.properties, 'date')
-  const title = titleProp?.title?.map((t) => t.plain_text).join('').trim() || '(제목 없음)'
+  const titleText = titleProp?.title?.map((t) => t.plain_text).join('').trim() ?? ''
   const isoDate = dateProp?.date?.start ?? ''
+  const dateLabel = isoDate ? formatDate(isoDate) : ''
+  const title = deriveTitle({
+    titleText,
+    summaryText: findSummaryText(page.properties),
+    fallbackDateLabel: dateLabel || undefined,
+  })
   return {
-    id: page.id,
     title,
-    date: isoDate ? formatDate(isoDate) : '',
+    date: dateLabel,
     notionUrl: page.url,
     sortKey: isoDate,
   }
@@ -103,7 +119,11 @@ for (const source of SOURCES) {
   const items = pages
     .map(mapPage)
     .sort((a, b) => (a.sortKey < b.sortKey ? 1 : a.sortKey > b.sortKey ? -1 : 0))
-    .map(({ sortKey, ...item }) => item)
+    // Sequential ids (newest-first, "1".."N") instead of raw Notion page
+    // ids: src/data/tilContent.ts pairs each entry with its til/<folder>
+    // note by position, which only holds together if ids stay a clean,
+    // stable 1..N run in the same order as the til/ folders on disk.
+    .map(({ sortKey, ...item }, index) => ({ id: String(index + 1), ...item }))
 
   const outPath = path.join(dataDir, source.outFile)
   await writeFile(outPath, toModuleSource(source.exportName, items), 'utf8')
