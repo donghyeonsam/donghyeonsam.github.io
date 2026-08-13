@@ -122,10 +122,9 @@ for (const source of SOURCES) {
   const items = pages
     .map(mapPage)
     .sort((a, b) => (a.sortKey < b.sortKey ? 1 : a.sortKey > b.sortKey ? -1 : 0))
-    // Sequential ids (newest-first, "1".."N") instead of raw Notion page
-    // ids: src/data/tilContent.ts pairs each entry with its til/<folder>
-    // note by position, which only holds together if ids stay a clean,
-    // stable 1..N run in the same order as the til/ folders on disk.
+    // Sequential ids (newest-first, "1".."N") instead of raw Notion page ids,
+    // so /techlogs/:id routes stay short and stable across re-syncs as long
+    // as the underlying Notion rows don't change order.
     .map(({ sortKey, ...item }, index) => ({ id: String(index + 1), ...item }))
 
   const outPath = path.join(dataDir, source.outFile)
