@@ -11,7 +11,7 @@
 
 import 'dotenv/config'
 import { Client } from '@notionhq/client'
-import { writeFile, mkdir, readdir } from 'node:fs/promises'
+import { writeFile, mkdir, readdir, readFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -22,6 +22,7 @@ import { deriveTitle } from './til-title.mjs'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.join(__dirname, '..')
 const TIL_DIR = path.join(ROOT, 'til')
+const MANIFEST_PATH = path.join(TIL_DIR, '.sync-manifest.json')
 
 const EXCLUDE_DATES = new Set(['2026-01-20', '2026-03-23', '2026-03-24', '2026-05-22', '2026-01-21', '2026-01-23', '2026-01-30', '2026-02-15', '2026-02-17', '2026-02-18', '2026-03-02', '2026-03-06', '2026-03-13', '2026-03-14', '2026-03-21', '2026-03-22', '2026-04-02', '2026-04-03', '2026-04-08', '2026-04-18', '2026-04-20', '2026-04-25', '2026-05-05', '2026-05-29', '2026-06-05'])
 
@@ -315,6 +316,16 @@ async function main() {
 
   console.log(`[sync-til] 기존 TIL: ${existing.size}개`)
 
+  // Notion 행 id(page.id) → 동기화된 til/ 폴더명 매니페스트.
+  // 폴더가 이미 있는지만으로는 "이 Notion 행을 이미 처리했는지"를 알 수
+  // 없다(day N에 처리한 행도 day N+1에 다시 보게 되므로). 그래서 폴더
+  // 존재 여부가 아니라 이 매니페스트로만 스킵 여부를 판단한다.
+  let manifest = {}
+  if (existsSync(MANIFEST_PATH)) {
+    manifest = JSON.parse(await readFile(MANIFEST_PATH, 'utf8'))
+  }
+  const alreadySynced = new Set(Object.keys(manifest))
+
   // Notion DB에서 전체 엔트리 가져오기
   const pages = await fetchAllEntries()
   console.log(`[sync-til] Notion DB 엔트리: ${pages.length}개`)
@@ -322,6 +333,8 @@ async function main() {
   const newEntries = []
 
   for (const page of pages) {
+    if (alreadySynced.has(page.id)) continue
+
     const date = parseDate(page)
     if (!date) continue
     if (EXCLUDE_DATES.has(date)) continue
@@ -329,36 +342,32 @@ async function main() {
     const mmdd = getMMDD(date)
     if (!mmdd) continue
 
-    // 중복 날짜 처리
+    // 같은 날짜에 이미 다른 (진짜 신규) 항목이 있으면 접미사를 붙인다.
     let filename = mmdd
     let suffix = 0
     while (existing.has(filename)) {
-      // 이미 동기화된 항목이면 건너뛰기
-      if (suffix === 0) {
-        suffix = 1
-        filename = `${mmdd}_${suffix}`
-      } else {
-        suffix++
-        filename = `${mmdd}_${suffix}`
-      }
+      suffix++
+      filename = `${mmdd}_${suffix}`
     }
-
-    // 이미 존재하면 건너뛰기 (첫 시도에서 existing에 있었으면)
-    if (suffix === 0 && existing.has(mmdd)) continue
 
     const props = page.properties
     const tilSummary = getTilSummary(props)
     const yourLinks = getYourLinks(props)
-    const notionPageId = extractNotionPageId(yourLinks)
+    const contentPageId = extractNotionPageId(yourLinks)
 
     const titleProp = getPropertyValue(props, 'title')
     const titleText = titleProp?.title?.map(t => t.plain_text).join('').trim() ?? ''
     const dateLabel = `${mmdd.slice(0, 2)}.${mmdd.slice(2, 4)}`
     const title = deriveTitle({ titleText, summaryText: tilSummary, fallbackDateLabel: dateLabel })
 
-    newEntries.push({ date, filename, title, tilSummary, notionPageId, yourLinks })
+    newEntries.push({ date, filename, title, tilSummary, notionPageId: contentPageId, yourLinks, rowId: page.id })
     existing.add(filename)
+    manifest[page.id] = filename
   }
+
+  // 새로 처리한 행이 없어도 매니페스트 자체는 항상 최신 상태로 써 둔다
+  // (내용이 그대로면 diff도 없다).
+  await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n', 'utf8')
 
   if (newEntries.length === 0) {
     console.log('[sync-til] 새로운 TIL 없음 — 변경 없이 종료.')
