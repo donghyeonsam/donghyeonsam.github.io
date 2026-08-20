@@ -11,7 +11,7 @@
 
 import 'dotenv/config'
 import { Client } from '@notionhq/client'
-import { writeFile, mkdir, readdir, readFile } from 'node:fs/promises'
+import { writeFile, mkdir, readdir, readFile, rm, rename } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -23,6 +23,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.join(__dirname, '..')
 const TIL_DIR = path.join(ROOT, 'til')
 const MANIFEST_PATH = path.join(TIL_DIR, '.sync-manifest.json')
+const FLAGGED_PATH = path.join(TIL_DIR, '.flagged-duplicates.json')
+
+// 새로 발견된 Notion 행이 이미 동기화된 글과 이 이상 겹치면 자동 커밋하지
+// 않고 사람 확인이 필요한 것으로 표시한다. page.id 추적(매니페스트)은
+// "같은 Notion 행을 두 번 처리"만 막을 뿐, 서로 다른 행이 같은 내용을
+// 담고 있는 경우(행 복사, 예전 글 재입력 등)는 못 막기 때문의 2차 방어선.
+const DUP_SIMILARITY_THRESHOLD = 0.6
 
 const EXCLUDE_DATES = new Set(['2026-01-20', '2026-03-23', '2026-03-24', '2026-05-22', '2026-01-21', '2026-01-23', '2026-01-30', '2026-02-15', '2026-02-17', '2026-02-18', '2026-03-02', '2026-03-06', '2026-03-13', '2026-03-14', '2026-03-21', '2026-03-22', '2026-04-02', '2026-04-03', '2026-04-08', '2026-04-18', '2026-04-20', '2026-04-25', '2026-05-05', '2026-05-29', '2026-06-05'])
 
@@ -61,6 +68,16 @@ async function fetchAllEntries() {
 
 function parseDate(page) {
   const props = page.properties
+
+  // 실제 Notion "Date" 속성이 있으면 최우선으로 쓴다. title 정규식이나
+  // created_time(행을 Notion에 "생성한" 시각 — 실제로 공부한 날짜와
+  // 다를 수 있음)보다 훨씬 신뢰도가 높다. 같은 내용이 서로 다른 mmdd
+  // 폴더로 흩어져 중복 판별을 피해가는 사고가 실제로 있었다.
+  const dateTypeProp = Object.values(props).find(p => p.type === 'date')
+  if (dateTypeProp?.date?.start) {
+    return dateTypeProp.date.start.slice(0, 10)
+  }
+
   // "Created Date" 필드 (created_time)
   const createdDate = Object.values(props).find(p => p.type === 'created_time')
   // "ToDay" 필드 (title) — 날짜 정보가 제목에 있을 수 있음
@@ -302,6 +319,41 @@ async function blocksToMarkdown(blocks, destDir, depth = 0) {
   return md
 }
 
+// ─── 콘텐츠 유사도(중복 감지) ───
+
+function normalizeForCompare(text) {
+  return text
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '[IMG]') // 이미지 참조는 파일명이 매번 달라지므로 통일
+    .replace(/```[a-zA-Z]*/g, '```') // 코드펜스 언어 표기 차이 무시
+    .replace(/^#.*$/m, '') // 첫 줄(제목) 제외 — 제목 표기 방식 차이는 무시
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function charShingles(text, n = 8) {
+  const shingles = new Set()
+  for (let i = 0; i + n <= text.length; i++) shingles.add(text.slice(i, i + n))
+  return shingles
+}
+
+function jaccardSimilarity(a, b) {
+  const sa = charShingles(a)
+  const sb = charShingles(b)
+  if (sa.size === 0 || sb.size === 0) return 0
+  let intersection = 0
+  for (const s of sa) if (sb.has(s)) intersection++
+  return intersection / (sa.size + sb.size - intersection)
+}
+
+function findMostSimilar(text, corpus) {
+  let best = null
+  for (const entry of corpus) {
+    const score = jaccardSimilarity(text, entry.text)
+    if (!best || score > best.score) best = { dir: entry.dir, score }
+  }
+  return best
+}
+
 // ─── 메인 ───
 
 async function main() {
@@ -330,7 +382,16 @@ async function main() {
   const pages = await fetchAllEntries()
   console.log(`[sync-til] Notion DB 엔트리: ${pages.length}개`)
 
-  const newEntries = []
+  // 유사도 비교 기준이 될, 이미 동기화된 글들의 정규화된 본문
+  const existingTexts = []
+  for (const dirName of existing) {
+    const p = path.join(TIL_DIR, dirName, `${dirName}.md`)
+    if (!existsSync(p)) continue
+    const raw = await readFile(p, 'utf8')
+    existingTexts.push({ dir: dirName, text: normalizeForCompare(raw) })
+  }
+
+  const candidates = []
 
   for (const page of pages) {
     if (alreadySynced.has(page.id)) continue
@@ -349,6 +410,7 @@ async function main() {
       suffix++
       filename = `${mmdd}_${suffix}`
     }
+    existing.add(filename) // 이번 실행의 다른 후보와 슬롯이 겹치지 않도록 예약
 
     const props = page.properties
     const tilSummary = getTilSummary(props)
@@ -360,49 +422,79 @@ async function main() {
     const dateLabel = `${mmdd.slice(0, 2)}.${mmdd.slice(2, 4)}`
     const title = deriveTitle({ titleText, summaryText: tilSummary, fallbackDateLabel: dateLabel })
 
-    newEntries.push({ date, filename, title, tilSummary, notionPageId: contentPageId, yourLinks, rowId: page.id })
-    existing.add(filename)
-    manifest[page.id] = filename
+    candidates.push({ date, filename, title, tilSummary, notionPageId: contentPageId, yourLinks, rowId: page.id })
+  }
+
+  console.log(`[sync-til] 새 후보 ${candidates.length}개 발견 — 콘텐츠 확인 중`)
+
+  const newEntries = []
+  const flagged = []
+
+  for (const candidate of candidates) {
+    // 본문을 임시 폴더에 먼저 만들어서(이미지 다운로드 포함) 유사도부터
+    // 확인한다. 중복으로 판정되면 최종 위치로 옮기지 않고 통째로 지운다.
+    const stagingDir = path.join(TIL_DIR, `.staging-${candidate.filename}`)
+    await mkdir(stagingDir, { recursive: true })
+
+    let content = ''
+    if (candidate.notionPageId) {
+      try {
+        console.log(`[sync-til] 페이지 가져오는 중: ${candidate.filename} (${candidate.notionPageId})`)
+        const blocks = await fetchBlocks(candidate.notionPageId)
+        content = `# ${candidate.title}\n\n`
+        content += await blocksToMarkdown(blocks, stagingDir)
+      } catch (err) {
+        console.error(`[sync-til] ${candidate.filename} 페이지 가져오기 실패: ${err.message}`)
+        content = `# ${candidate.title}\n\n${candidate.tilSummary}\n`
+      }
+    } else {
+      content = `# ${candidate.title}\n\n${candidate.tilSummary}\n`
+    }
+
+    const normalized = normalizeForCompare(content)
+    const match = normalized ? findMostSimilar(normalized, existingTexts) : null
+
+    if (match && match.score >= DUP_SIMILARITY_THRESHOLD) {
+      console.warn(`[sync-til] 중복 의심으로 스킵: ${candidate.filename} (til/${match.dir}와 유사도 ${match.score.toFixed(3)}) — 수동 확인 필요`)
+      flagged.push({
+        filename: candidate.filename,
+        title: candidate.title,
+        rowId: candidate.rowId,
+        matchedDir: match.dir,
+        similarity: Number(match.score.toFixed(3)),
+      })
+      await rm(stagingDir, { recursive: true, force: true })
+      existing.delete(candidate.filename) // 슬롯 반납 — 다음 실행에서 다시 검토됨 (매니페스트에도 안 올림)
+      continue
+    }
+
+    const finalDir = path.join(TIL_DIR, candidate.filename)
+    await rename(stagingDir, finalDir)
+    await writeFile(path.join(finalDir, `${candidate.filename}.md`), content, 'utf8')
+    console.log(`[sync-til] 저장: til/${candidate.filename}/${candidate.filename}.md`)
+
+    newEntries.push(candidate)
+    manifest[candidate.rowId] = candidate.filename
+    existingTexts.push({ dir: candidate.filename, text: normalized }) // 같은 실행 내 이후 후보와도 비교되도록
   }
 
   // 새로 처리한 행이 없어도 매니페스트 자체는 항상 최신 상태로 써 둔다
   // (내용이 그대로면 diff도 없다).
   await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n', 'utf8')
 
+  if (flagged.length > 0) {
+    await writeFile(FLAGGED_PATH, JSON.stringify(flagged, null, 2) + '\n', 'utf8')
+    console.warn(`[sync-til] 중복 의심 ${flagged.length}건 — til/.flagged-duplicates.json 확인 필요`)
+  } else if (existsSync(FLAGGED_PATH)) {
+    await rm(FLAGGED_PATH) // 이전에 걸렸던 항목이 이번엔 없으면(해결됨) 정리
+  }
+
   if (newEntries.length === 0) {
-    console.log('[sync-til] 새로운 TIL 없음 — 변경 없이 종료.')
+    console.log('[sync-til] 새로운 TIL 없음(중복 의심 제외 후) — 변경 없이 종료.')
     process.exit(0)
   }
 
-  console.log(`[sync-til] 새 TIL ${newEntries.length}개 발견`)
-
-  for (const entry of newEntries) {
-    const entryDir = path.join(TIL_DIR, entry.filename)
-    await mkdir(entryDir, { recursive: true })
-    const mdPath = path.join(entryDir, `${entry.filename}.md`)
-
-    let content = ''
-
-    if (entry.notionPageId) {
-      // Notion 페이지 본문 가져오기
-      try {
-        console.log(`[sync-til] 페이지 가져오는 중: ${entry.filename} (${entry.notionPageId})`)
-        const blocks = await fetchBlocks(entry.notionPageId)
-        content = `# ${entry.title}\n\n`
-        content += await blocksToMarkdown(blocks, entryDir)
-      } catch (err) {
-        console.error(`[sync-til] ${entry.filename} 페이지 가져오기 실패: ${err.message}`)
-        // fallback to summary
-        content = `# ${entry.title}\n\n${entry.tilSummary}\n`
-      }
-    } else {
-      // Notion 링크 없으면 summary 사용
-      content = `# ${entry.title}\n\n${entry.tilSummary}\n`
-    }
-
-    await writeFile(mdPath, content, 'utf8')
-    console.log(`[sync-til] 저장: til/${entry.filename}/${entry.filename}.md`)
-  }
+  console.log(`[sync-til] 새 TIL ${newEntries.length}개 동기화됨`)
 
   // 새 엔트리 정보를 JSON으로 출력 (GitHub Action에서 커밋 생성에 사용)
   const output = newEntries.map(e => ({
