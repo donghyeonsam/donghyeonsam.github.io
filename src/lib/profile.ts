@@ -40,13 +40,15 @@ export type BackgroundRow = {
 export const background: BackgroundRow[] = [
   {
     title: "SSAFY 15기",
-    role: "삼성 청년 SW·AI 아카데미",
+    role: "비전공 Python반",
     logo: "/ex_logo/ssafy_web.png",
     period: "2026.01 ~ 2026.12",
     details: [
-      "프로젝트 경진대회 우수상 2회 (ERP · WITW)",
-      "Ait · AI 서버 2종 단독 설계·구현",
-      "WITW · 뉴스 논조 분류 모델 증류",
+      "1학기 925시간 이수",
+      "알고리즘·자료구조 문제 해결",
+      "웹·DB 중심 실무 SW 개발",
+      "생성형 AI · GPU 기반 AI 프로젝트",
+      "Git·Jira 협업과 코드 리뷰",
     ],
   },
   {
@@ -54,7 +56,7 @@ export const background: BackgroundRow[] = [
     role: "식품조리학과",
     icon: "school",
     period: "2023 ~ 2025",
-    details: ["식품조리학과 졸업 (편입학)", "주방에서 개발자로 전향"],
+    details: ["식품조리학과 졸업 (편입학)"],
   },
   {
     title: "Certificates",
