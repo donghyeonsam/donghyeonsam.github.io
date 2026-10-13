@@ -1,30 +1,68 @@
-node_modules
-dist
-dist-ssr
-*.local
-.env
-.env.*
-!.env.example
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# TypeScript incremental build cache + compiled output of vite.config.ts
-# (tsconfig.node.json has no outDir, so tsc drops these next to the source)
-*.tsbuildinfo
-vite.config.js
-vite.config.d.ts
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
-# Vite's dep pre-bundling cache (normally under node_modules/.vite, but can
-# land at the project root too)
-.vite
+# testing
+/coverage
 
-# Editor / OS
-.vscode/*
-!.vscode/extensions.json
-.idea
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
 .DS_Store
-Thumbs.db
+*.pem
 
-# Logs
+# personal profile photos (웹용 profile.jpg만 올린다)
+/public/my_profile/*
+!/public/my_profile/
+!/public/my_profile/profile.jpg
+
+# til/ 이미지를 빌드할 때마다 복사해 두는 사본 (scripts/copy-til-assets.mjs)
+/public/til/
+
+# Notion TIL 동기화 중간 산출물
+/.new-til-entries.json
+
+# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+!.env.example
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# claude
+.claude/settings.local.json
+
+# 기기 간 임시 전송 폴더
+/.xfer/
+

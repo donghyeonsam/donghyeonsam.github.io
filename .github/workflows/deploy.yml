@@ -1,9 +1,16 @@
-name: Deploy to GitHub Pages
+name: Deploy Next.js site to Pages
 
+# master에 push하면 자동 배포하고, Actions 탭에서 수동 배포도 가능하다.
+# Notion TIL 동기화가 끝나면 그 결과도 바로 배포한다.
+# (워크플로가 GITHUB_TOKEN으로 push한 커밋은 push 트리거를 다시 깨우지 않기 때문)
 on:
   push:
     branches: [master]
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Sync Notion TIL"]
+    types: [completed]
+    branches: [master]
 
 permissions:
   contents: read
@@ -12,26 +19,40 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@v6
         with:
-          node-version: 20
+          ref: master
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm run build
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build static Next.js site
+        run: npm run build
         env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          NOTION_TIL_DATABASE_ID: ${{ secrets.NOTION_TIL_DATABASE_ID }}
-          NOTION_TECHLOGS_DATABASE_ID: ${{ secrets.NOTION_TECHLOGS_DATABASE_ID }}
-      - uses: actions/upload-pages-artifact@v3
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Upload static export
+        uses: actions/upload-pages-artifact@v4
         with:
-          path: dist
+          path: ./out
 
   deploy:
     needs: build
@@ -39,6 +60,8 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
-      - id: deployment
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4

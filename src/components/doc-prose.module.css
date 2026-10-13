@@ -1,0 +1,234 @@
+/* Markdown 본문에 읽기용 서체와 행간을 적용한다. */
+.prose {
+  font-family: var(--font-pretendard), sans-serif;
+  color: var(--body);
+  font-size: 16px;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+/* 큰 섹션 제목은 세로 accent 선으로 문서의 주요 구획을 표시한다. */
+.prose h2 {
+  scroll-margin-top: 120px;
+  margin-top: 76px;
+  padding-left: 14px;
+  border-left: 3px solid color-mix(in srgb, var(--accent) 72%, transparent);
+  color: var(--foreground);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.35;
+}
+
+.prose h2:first-child {
+  margin-top: 56px;
+}
+
+/* 문제 해결 사례처럼 섹션 안에서 반복되는 소제목은 장식 없이 위계만 둔다. */
+.prose h3 {
+  margin-top: 44px;
+  color: color-mix(in srgb, var(--foreground) 96%, transparent);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.45;
+}
+
+.prose p {
+  margin-top: 16px;
+}
+
+.prose strong {
+  color: color-mix(in srgb, var(--foreground) 96%, transparent);
+  font-weight: 700;
+}
+
+.prose ul,
+.prose ol {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding-left: 22px;
+}
+
+.prose ul {
+  list-style: disc;
+}
+
+.prose ol {
+  list-style: decimal;
+}
+
+.prose li {
+  padding-left: 3px;
+}
+
+.prose li::marker {
+  color: color-mix(in srgb, var(--foreground) 38%, transparent);
+}
+
+/* 링크는 본문의 accent 색과 밑줄을 함께 사용해 색상에만 의존하지 않는다. */
+.prose a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* 인라인 코드와 코드 블록은 본문보다 조밀한 mono 서체로 구분한다. */
+.prose code {
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  color: color-mix(in srgb, var(--foreground) 90%, transparent);
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 13px;
+}
+
+.prose pre {
+  margin-top: 18px;
+  padding: 18px;
+  overflow-x: auto;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.prose pre code {
+  padding: 0;
+  background: transparent;
+  line-height: 1.7;
+}
+
+.prose img {
+  width: 100%;
+  height: auto;
+  margin-top: 20px;
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.prose blockquote {
+  margin-top: 20px;
+  padding: 4px 0 4px 18px;
+  border-left: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  color: color-mix(in srgb, var(--foreground) 64%, transparent);
+}
+
+/* Markdown 변환 과정에서 생성한 gallery 래퍼는 넓은 창에서 두 열로 배치한다. */
+.prose :global(.gallery) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.prose :global(.gallery) img {
+  margin-top: 0;
+}
+
+/* 본문 영역(@container) 폭을 기준으로 좁은 화면에서 글자 크기를 줄인다. */
+@container (max-width: 42rem) {
+  .prose {
+    font-size: 15px;
+    line-height: 1.78;
+  }
+
+  .prose h2 {
+    margin-top: 60px;
+    font-size: 21px;
+  }
+
+  .prose h2:first-child {
+    margin-top: 42px;
+  }
+
+  .prose h3 {
+    margin-top: 34px;
+    font-size: 17px;
+  }
+
+  .prose :global(.gallery) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* TIL 코드 블록의 highlight.js 토큰. 사이트 팔레트에 맞춰 라이트·다크 모두 읽히게 한다. */
+.prose :global(.hljs-keyword),
+.prose :global(.hljs-selector-tag),
+.prose :global(.hljs-built_in),
+.prose :global(.hljs-name) {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.prose :global(.hljs-string),
+.prose :global(.hljs-attr),
+.prose :global(.hljs-attribute) {
+  color: #4f7a52;
+}
+
+.prose :global(.hljs-number),
+.prose :global(.hljs-literal),
+.prose :global(.hljs-title),
+.prose :global(.hljs-title.function_) {
+  color: #3f6698;
+}
+
+.prose :global(.hljs-comment),
+.prose :global(.hljs-quote) {
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
+  font-style: italic;
+}
+
+:global(:root[data-theme="dark"]) .prose :global(.hljs-string),
+:global(:root[data-theme="dark"]) .prose :global(.hljs-attr),
+:global(:root[data-theme="dark"]) .prose :global(.hljs-attribute) {
+  color: #9cc59a;
+}
+
+:global(:root[data-theme="dark"]) .prose :global(.hljs-number),
+:global(:root[data-theme="dark"]) .prose :global(.hljs-literal),
+:global(:root[data-theme="dark"]) .prose :global(.hljs-title),
+:global(:root[data-theme="dark"]) .prose :global(.hljs-title.function_) {
+  color: #8fb3e0;
+}
+
+/* Notion 표 */
+.prose table {
+  display: block;
+  margin-top: 18px;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.prose th,
+.prose td {
+  padding: 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  text-align: left;
+}
+
+.prose th {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--foreground);
+}
+
+.prose hr {
+  margin: 40px 0;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+/* Notion에서 넘어온 h1은 페이지 제목보다 한 단계 낮게 보이게 한다. */
+.prose h1 {
+  margin-top: 48px;
+  color: var(--foreground);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.4;
+}

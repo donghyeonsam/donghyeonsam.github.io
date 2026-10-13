@@ -1,0 +1,120 @@
+.portrait {
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  border-radius: 0.25rem;
+  padding: 1rem 1rem 1.5rem;
+  background: var(--paper);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 4%), 0 18px 36px -20px rgb(0 0 0 / 22%);
+}
+
+.portraitCaption {
+  margin-top: 1.25rem;
+  padding-inline: 0.25rem;
+}
+
+.projectPanel {
+  --panel-color: #b7c7b0;
+  position: relative;
+  display: grid;
+  aspect-ratio: 16 / 9;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: linear-gradient(140deg,
+    color-mix(in srgb, var(--panel-color) 25%, var(--background)),
+    color-mix(in srgb, var(--panel-color) 65%, var(--background)));
+}
+
+.projectPanel[data-project="ait"] { --panel-color: #adbcd3; }
+.projectPanel[data-project="what-in-the-world"] { --panel-color: #a9c3c4; }
+.projectPanel[data-project="erp"] { --panel-color: #d2ad95; }
+
+.projectImage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 0.35rem;
+  box-shadow: 0 20px 36px -20px rgb(0 0 0 / 28%);
+}
+
+.projectMeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  color: color-mix(in srgb, var(--foreground) 65%, transparent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+
+.projectMeta > span:first-child {
+  color: var(--accent);
+}
+
+.notesList {
+  border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.notesList > li {
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.noteLink {
+  display: block;
+  padding: 1rem 0;
+}
+
+.noteLink:hover .noteTitle {
+  color: var(--accent);
+}
+
+.noteLink:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.noteTitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+  color: var(--foreground);
+  transition: color 200ms;
+}
+
+.noteMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.noteTags,
+.noteDate {
+  font-size: 12px;
+  line-height: 20px;
+  color: color-mix(in srgb, var(--foreground) 65%, transparent);
+}
+
+.noteDate {
+  font-variant-numeric: tabular-nums;
+}
+
+.noteTags + .noteDate::before {
+  content: "·";
+  margin-right: 0.5rem;
+}
+
+@media (min-width: 1024px) {
+  .portrait {
+    transform: rotate(-2deg);
+  }
+}
+

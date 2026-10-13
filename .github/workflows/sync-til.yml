@@ -18,7 +18,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - run: npm ci
@@ -76,12 +76,5 @@ jobs:
       - name: Push changes
         run: git push origin master
 
-      # 4. til.ts 재생성 (til/*.md에서 직접 빌드 — Notion title 속성에 의존하지 않음)
-      - name: Rebuild til.ts from synced markdown
-        run: node scripts/build-til.mjs
-
-      - name: Commit til.ts update
-        run: |
-          git add src/data/til.ts
-          git diff --cached --quiet || git commit -m "chore: update til.ts metadata"
-          git push origin master
+      # 사이트는 빌드할 때 til/*.md를 직접 읽으므로 따로 만들 목록 파일이 없다.
+      # 배포는 deploy.yml이 이 워크플로 완료(workflow_run)를 받아 이어서 한다.

@@ -1,0 +1,16 @@
+/* 블렌드는 고정 레이어 자체에 걸어야 아래 페이지와 섞인다. 깜빡임은 눈이 아파 정지된 질감만 둔다. */
+.root {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat;
+  image-rendering: pixelated;
+}
