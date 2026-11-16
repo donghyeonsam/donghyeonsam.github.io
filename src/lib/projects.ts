@@ -55,7 +55,7 @@ export const projects: Project[] = [
   },
   {
     slug: "erp",
-    name: "AI 워크플로우 추천 서비스를 갖춘 ERP 서비스",
+    name: "AI 워크플로우 추천 서비스를 갖춘 ERP",
     tagline: "AI가 오늘 할 일의 순서를 제안하는 통합 ERP",
     award: "프로젝트 경진대회 우수상",
     thumbnail: "/projects/erp/logo.jpg",
