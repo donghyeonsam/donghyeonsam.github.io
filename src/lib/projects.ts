@@ -23,7 +23,7 @@ export const projects: Project[] = [
     slug: "nexa",
     name: "NEXA",
     tagline: "엑셀에서 시작해 일상 업무까지 이어지는 AI 기반 사내 ERP",
-    thumbnail: "/projects/nexa/logo.jpg",
+    thumbnail: "/projects/nexa/logo.png",
     role: "AI 업무 자동화 서비스 담당",
     period: "2026.10 ~ 2026.11",
     team: "6인 팀 (BE 5 · Infra 1)",
