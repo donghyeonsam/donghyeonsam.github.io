@@ -20,6 +20,17 @@ export type Project = {
 
 export const projects: Project[] = [
   {
+    slug: "nexa",
+    name: "NEXA",
+    tagline: "엑셀에서 시작해 일상 업무까지 이어지는 AI 기반 사내 ERP",
+    thumbnail: "/projects/nexa/logo.jpg",
+    role: "AI 업무 자동화 서비스 담당",
+    period: "2026.10 ~ 2026.11",
+    team: "6인 팀 (BE 5 · Infra 1)",
+    stack: ["FastAPI", "LangGraph", "vLLM", "MLflow", "Kafka"],
+    repo: "https://github.com/donghyeonsam/NEXA-project",
+  },
+  {
     slug: "ait",
     name: "Ait",
     tagline: "사용자의 이력서·자소서·GitHub를 읽고 맞춤형 질문을 제공하는 AI 모의면접",
@@ -44,7 +55,7 @@ export const projects: Project[] = [
   },
   {
     slug: "erp",
-    name: "SSAFY International ERP",
+    name: "AI 워크플로우 추천 서비스를 갖춘 ERP 서비스",
     tagline: "AI가 오늘 할 일의 순서를 제안하는 통합 ERP",
     award: "프로젝트 경진대회 우수상",
     thumbnail: "/projects/erp/logo.jpg",
