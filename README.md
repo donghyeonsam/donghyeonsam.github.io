@@ -31,7 +31,3 @@ npm run build   # out/ 에 정적 사이트 생성
 필요한 저장소 시크릿: `NOTION_TOKEN`, `NOTION_TIL_DATABASE_ID`.
 로컬에서는 `.env.example`을 `.env`로 복사해 채운 뒤 `npm run sync:til`.
 
-## 디자인
-
-레이아웃과 효과는 [hj0543.github.io](https://github.com/hj0543/hj0543.github.io) 템플릿을 바탕으로 했다.
-React Bits 효과의 라이선스는 `src/components/react-bits/LICENSE.md`에 있다.
